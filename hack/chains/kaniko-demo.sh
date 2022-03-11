@@ -41,9 +41,9 @@ title "Wait a few seconds for chains finalizers to complete"
 sleep 10
 
 # This will use cosign to verify the new build
-$SCRIPTDIR/kaniko-cosign-verify.sh
+$SCRIPTDIR/kaniko-cosign-verify.sh $( tkn-last-taskrun kaniko-chains )
 
 pause
 
 # This will use rekor-cli to verify the new build
-$SCRIPTDIR/rekor-verify-taskrun.sh
+$SCRIPTDIR/rekor-verify-taskrun.sh $( tkn-last-taskrun kaniko-chains )

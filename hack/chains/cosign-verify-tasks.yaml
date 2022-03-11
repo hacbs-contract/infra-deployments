@@ -1,0 +1,88 @@
+---
+apiVersion: tekton.dev/v1beta1
+kind: ClusterTask
+metadata:
+  annotations:
+    tekton.dev/displayName: cosign verify
+    tekton.dev/pipelines.minVersion: "0.19"
+    tekton.dev/tags: cosign, chains, signature
+  labels:
+    app.kubernetes.io/version: "0.1"
+    operator.tekton.dev/provider-type: redhat
+  name: cosign-verify
+spec:
+  description: cosign-verify verifies the signature of the image reference with the provided public key.
+  params:
+  - description: Public key used to verify the signature. Points to a Secret containing `cosign.pub` key.
+    name: PUBLIC_KEY_NAME
+    type: string
+    default: signing-secrets
+  - description: Pull reference of the image to verify.
+    name: IMAGE
+    type: string
+  results:
+    - name: VERIFY_JSON
+      description: Result of verification in JSON format
+  steps:
+  - script: |
+      #!/usr/bin/env bash
+      cosign verify --output-file $(results.VERIFY_JSON.path) --key <(echo "$PUBLIC_KEY") $(params.IMAGE)
+    image: quay.io/redhat-appstudio/appstudio-utils:fc65477f443133e59f614a206e14c839a6498aff
+    name: verify
+    env:
+    - name: PUBLIC_KEY
+      valueFrom:
+        secretKeyRef:
+          name: $(params.PUBLIC_KEY_NAME)
+          key: cosign.pub
+    volumeMounts:
+    - name: ca-certificates
+      mountPath: /etc/ssl/certs/
+  volumes:
+  - name: ca-certificates
+    secret:
+      secretName: chains-ca-cert
+---
+apiVersion: tekton.dev/v1beta1
+kind: ClusterTask
+metadata:
+  annotations:
+    tekton.dev/displayName: cosign verify attestation
+    tekton.dev/pipelines.minVersion: "0.19"
+    tekton.dev/tags: cosign, chains, attestation
+  labels:
+    app.kubernetes.io/version: "0.1"
+    operator.tekton.dev/provider-type: redhat
+  name: cosign-verify-attestation
+spec:
+  description: cosign-verify-attestation verifies the attestation of the image reference with the provided public key.
+  params:
+  - description: Public key used to verify the signature. Points to a Secret containing `cosign.pub` key.
+    name: PUBLIC_KEY_NAME
+    type: string
+    default: signing-secrets
+  - description: Pull reference of the image to verify.
+    name: IMAGE
+    type: string
+  results:
+    - name: VERIFY_JSON
+      description: Result of verification in JSON format
+  steps:
+  - script: |
+      #!/usr/bin/env bash
+      cosign verify-attestation --output-file $(results.VERIFY_JSON.path) --key <(echo "$PUBLIC_KEY") $(params.IMAGE)
+    image: quay.io/redhat-appstudio/appstudio-utils:fc65477f443133e59f614a206e14c839a6498aff
+    name: verify
+    env:
+    - name: PUBLIC_KEY
+      valueFrom:
+        secretKeyRef:
+          name: $(params.PUBLIC_KEY_NAME)
+          key: cosign.pub
+    volumeMounts:
+    - name: ca-certificates
+      mountPath: /etc/ssl/certs/
+  volumes:
+  - name: ca-certificates
+    secret:
+      secretName: chains-ca-cert
