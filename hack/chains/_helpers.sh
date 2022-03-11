@@ -122,3 +122,19 @@ curl-json() {
 trim-name() {
   echo "$1" | sed 's#.*/##'
 }
+
+#------------------------------------------------
+# Tekton utilities
+#------------------------------------------------
+
+#
+# Last TaskRun or ClusterTaskRun name of a provided named task
+#
+tkn-last-taskrun() {
+  local TASK_NAME=$1
+  TASKRUN_NAME=$(tkn taskrun list -o name --label "tekton.dev/task=$TASK_NAME" --limit 1 -o=go-template='{{range .items}}{{.metadata.name}}{{end}}')
+  if [[ -z $TASKRUN_NAME ]]; then
+    TASKRUN_NAME=$(tkn taskrun list -o name --label "tekton.dev/clusterTask=$TASK_NAME" --limit 1 -o=go-template='{{range .items}}{{.metadata.name}}{{end}}')
+  fi
+  echo $TASKRUN_NAME
+}
